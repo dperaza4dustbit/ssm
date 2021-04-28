@@ -1,6 +1,6 @@
 apiVersion: v2
 name: ssm-service
-description: A Helm chart for Kubernetes
+description: A Helm chart for a Software Security Module
 
 # A chart can be either an 'application' or a 'library' chart.
 #
