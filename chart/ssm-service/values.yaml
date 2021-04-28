@@ -1,0 +1,41 @@
+# Default values for ssm-service.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 3
+k8Project: davptest
+k8Name: ssm-bee
+k8ServiceName: ssm
+
+serviceAccount: sa-with-anyuid
+
+
+config:
+  cipherOutputFormat: base64
+
+image:
+  name: ssm
+  repository: default-route-openshift-image-registry.apps-crc.testing
+  pullPolicy: IfNotPresent
+  tag: "239D96BE-A678-4C55-9766-2D24292C3AF6"
+
+
+podSecurityContext: 
+  fsGroup: 2000
+
+securityContext:
+  runAsUser: 1000
+  
+
+service:
+  type: ClusterIP
+  port: 8080
+  sourceRange: 0.0.0.0/0
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
