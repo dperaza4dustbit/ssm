@@ -1,0 +1,7 @@
+apiVersion: helm.openshift.io/v1beta1
+kind: HelmChartRepository
+metadata:
+  name: davp
+spec:
+  connectionConfig:
+    url: https://dperaza4dustbit.github.io/helm-chart/

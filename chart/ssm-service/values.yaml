@@ -15,9 +15,9 @@ config:
 
 image:
   name: ssm
-  repository: default-route-openshift-image-registry.apps-crc.testing
+  repository: ''
   pullPolicy: IfNotPresent
-  tag: "6B8AFA95-B630-4DF1-A38A-22BCC43BA7AB"
+  tag: "latest"
 
 
 podSecurityContext: 
