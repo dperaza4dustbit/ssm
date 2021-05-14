@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.k8Name }}
-  namespace: {{ .Values.k8Project }}
+  #namespace: {{ .Values.k8Project }}
   annotations:
       app.kubernetes.io/part-of: ssm
 spec:
@@ -18,10 +18,10 @@ spec:
         app: {{ .Values.k8Name }}
         phase: test
     spec:
-      securityContext:
-        runAsUser: {{ .Values.securityContext.runAsUser }}
-        fsGroup: {{ .Values.podSecurityContext.fsGroup }}
-      serviceAccount: {{ .Values.serviceAccount }}
+      # securityContext:
+      #   runAsUser: {{ .Values.securityContext.runAsUser }}
+      #   fsGroup: {{ .Values.podSecurityContext.fsGroup }}
+      # serviceAccount: {{ .Values.serviceAccount }}
       containers:
       - name: {{ .Values.k8Name }}
         image: '{{ .Values.image.repository }}{{ .Values.image.name }}:{{ .Values.image.tag }}'

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Values.k8ServiceName }}
-  namespace: {{ .Values.k8Project }}
+  #namespace: {{ .Values.k8Project }}
 spec:
   type: {{ .Values.service.type }}
   # loadBalancerSourceRanges:
