@@ -1,0 +1,43 @@
+# Default values for ssm-service.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 4
+k8Project: default
+k8Name: haproxy-bee
+k8ServiceName: haproxy
+backendPort: 8080
+
+# serviceAccount: sa-with-anyuid
+
+
+image:
+  name: haproxy
+  repository: ''
+  pullPolicy: Always
+  tag: "latest"
+
+
+podSecurityContext: 
+  fsGroup: 2000
+
+securityContext:
+  runAsUser: 1000
+  
+
+service:
+  type: LoadBalancer
+  port: 80
+  sourceRange: 0.0.0.0/0
+
+locations:
+    - canada
+    - usa
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi

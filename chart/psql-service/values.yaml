@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
-k8Project: davpblah
+k8Project: davptest
 k8Name: psql-bee
 k8ServiceName: psql
 

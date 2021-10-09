@@ -20,7 +20,7 @@ import (
 type StringService interface {
 	Wrap(string, *rsa.PrivateKey) (string, error)
 	Unwrap(string, *rsa.PrivateKey) (string, error)
-	Healthcheck() string
+	Healthcheck() (string, string)
 }
 
 // stringService is a concrete implementation of StringService
@@ -69,9 +69,9 @@ func (stringService) Unwrap(s string, key *rsa.PrivateKey) (string, error) {
 	return string(plaintext), nil
 }
 
-func (stringService) Healthcheck() string {
+func (stringService) Healthcheck() (string, string) {
     log.Println("Received a healthcheck request.")
-	return os.Getenv("SSM_VERSION")
+	return os.Getenv("SSM_VERSION"), os.Getenv("SSM_LOCATION")
 }
 
 
@@ -99,6 +99,7 @@ type unwrapResponse struct {
 
 type healthcheckResponse struct {
 	V string `json:"version"`
+	  string `json:"location"`
 }
 
 // Endpoints are a primary abstraction in go-kit. An endpoint represents a single RPC (method in our service interface)
@@ -126,8 +127,8 @@ func makeUnwrapEndpoint(svc StringService, key *rsa.PrivateKey) endpoint.Endpoin
 
 func makeHealthcheckEndpoint(svc StringService) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		v := svc.Healthcheck()
-		return healthcheckResponse{v}, nil
+		v, l := svc.Healthcheck()
+		return healthcheckResponse{v, l}, nil
 	}
 }
 

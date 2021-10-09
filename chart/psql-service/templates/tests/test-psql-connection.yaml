@@ -18,6 +18,8 @@ spec:
           value: {{ .Values.config.postgresPassword }}
         - name: POSTGRESQL_DATABASE
           value: {{ .Values.config.postgresDatabase }}
+        - name: PSQL_SERVICE_PORT
+          value: "{{ .Values.service.port }}"
       command:
         - /bin/bash
         - -ec

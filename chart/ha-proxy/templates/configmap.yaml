@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: haproxy-config
+  namespace: {{ .Values.k8Project }}
+data:
+  haproxy_cfg: |
+    global
+            log stdout format raw local0 info
+            maxconn 20000
+            ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256
+
+            ssl-default-bind-options ssl-min-ver TLSv1.2
+            tune.ssl.default-dh-param 4096
+
+    defaults
+            log     global
+            mode    http
+            option  httplog
+            option  dontlognull
+            option  http-buffer-request
+            retries 3
+            timeout connect 10000
+            timeout client  50000
+            timeout server  50000
+
+    frontend http-in
+            bind *:{{ .Values.service.port }} alpn http/1.1
+            {{- range .Values.locations }}
+            acl {{ . }} path_beg -i /{{ . }}
+            {{- end }}
+
+            {{- range .Values.locations }}
+            use_backend davp_{{ . }} if {{ . }}
+            {{- end }}
+
+    backend do_404
+            http-request deny deny_status 404
+
+    backend stats
+            stats enable
+            stats hide-version
+            stats uri       /_haproxy?stats
+            stats refresh   10s
+
+    {{- $root := . -}}
+
+    {{- range .Values.locations }}
+    
+    backend davp_{{ . }}
+            option redispatch 1
+            option log-health-checks
+            option forwardfor
+            option httpchk GET /healthcheck
+
+            http-request set-path "%[path,regsub(^/{{ . }}/,/)]" 
+
+            server {{ . }} ssm-{{ . }}:{{ $root.Values.backendPort }} check
+            
+    {{- end }}
