@@ -80,33 +80,33 @@ var ErrEmpty = errors.New("empty string")
 
 // For each method, we define request and response structs
 type wrapRequest struct {
-	S string `json:"key"`
+	Key string `json:"key"`
 }
 
 type wrapResponse struct {
-	V   string `json:"cipher"`
+	Cipher  string `json:"cipher"`
 	Err string `json:"err,omitempty"` // errors don't define JSON marshaling
 }
 
 type unwrapRequest struct {
-	S string `json:"cipher"`
+	Cipher string `json:"cipher"`
 }
 
 type unwrapResponse struct {
-	V string `json:"key"`
+	Key string `json:"key"`
 	Err string `json:"err,omitempty"` // errors don't define JSON marshaling
 }
 
 type healthcheckResponse struct {
-	V string `json:"version"`
-	  string `json:"location"`
+	Version string `json:"version"`
+	Location  string `json:"location"`
 }
 
 // Endpoints are a primary abstraction in go-kit. An endpoint represents a single RPC (method in our service interface)
 func makeWrapEndpoint(svc StringService, key *rsa.PrivateKey) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(wrapRequest)
-		v, err := svc.Wrap(req.S, key)
+		v, err := svc.Wrap(req.Key, key)
 		if err != nil {
 			return wrapResponse{v, err.Error()}, nil
 		}
@@ -117,7 +117,7 @@ func makeWrapEndpoint(svc StringService, key *rsa.PrivateKey) endpoint.Endpoint 
 func makeUnwrapEndpoint(svc StringService, key *rsa.PrivateKey) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(unwrapRequest)
-		v, err := svc.Unwrap(req.S, key)
+		v, err := svc.Unwrap(req.Cipher, key)
 		if err != nil {
 			return unwrapResponse{v, err.Error()}, nil
 		}
