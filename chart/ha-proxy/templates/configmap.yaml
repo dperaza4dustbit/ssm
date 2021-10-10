@@ -29,7 +29,7 @@ data:
             {{- range .Values.locations }}
             acl {{ . }} path_beg -i /{{ . }}
             {{- end }}
-            acl stats path_beg -i /stats
+            acl stats path_beg -i /_haproxy
 
             {{- range .Values.locations }}
             use_backend davp_{{ . }} if {{ . }}
