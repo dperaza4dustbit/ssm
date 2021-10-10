@@ -29,10 +29,12 @@ data:
             {{- range .Values.locations }}
             acl {{ . }} path_beg -i /{{ . }}
             {{- end }}
+            acl stats path_beg -i /stats
 
             {{- range .Values.locations }}
             use_backend davp_{{ . }} if {{ . }}
             {{- end }}
+            use_backend stats if stats
 
     backend do_404
             http-request deny deny_status 404
@@ -56,5 +58,5 @@ data:
             http-request set-path "%[path,regsub(^/{{ . }}/,/)]" 
 
             server {{ . }} ssm-{{ . }}:{{ $root.Values.backendPort }} check
-            
+
     {{- end }}

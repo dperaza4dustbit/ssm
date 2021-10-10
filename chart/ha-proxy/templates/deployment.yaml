@@ -44,7 +44,7 @@ spec:
             memory: {{ .Values.resources.requests.memory }}
         readinessProbe:
           httpGet:
-            path: /healthcheck
+            path: '{{ first .Values.locations }}/healthcheck'
             port: {{ .Values.service.port }}
             scheme: HTTP
       volumes:
@@ -52,5 +52,5 @@ spec:
         configMap:
           name: haproxy-config
           items:
-          - key: "haproxy_config"
+          - key: "haproxy_cfg"
             path: "haproxy.cfg"
