@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.k8Name }}
   #namespace: {{ .Values.k8Project }}
   annotations:
-      app.kubernetes.io/part-of: haproxy
+      app.kubernetes.io/part-of: ssm
 spec:
   selector:
     matchLabels: 
@@ -18,22 +18,25 @@ spec:
         app: {{ .Values.k8Name }}
         phase: test
     spec:
-      securityContext:
-        runAsUser: {{ .Values.securityContext.runAsUser }}
-        fsGroup: {{ .Values.podSecurityContext.fsGroup }}
+      # securityContext:
+      #   runAsUser: {{ .Values.securityContext.runAsUser }}
+      #   fsGroup: {{ .Values.podSecurityContext.fsGroup }}
+      # serviceAccount: {{ .Values.serviceAccount }}
       containers:
       - name: {{ .Values.k8Name }}
         image: '{{ .Values.image.repository }}{{ .Values.image.name }}:{{ .Values.image.tag }}'
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        workingDir: /opt/haproxy
-        command: ["./haproxy", "-f", "./conf/haproxy.cfg"]
-        volumeMounts:
-        - name: haproxy-config
-          mountPath: /opt/haproxy/conf/
+        env:
+        - name: POSTGRESQL_USER
+          value: {{ .Values.config.postgresUser }}
+        - name: POSTGRESQL_PASSWORD
+          value: {{ .Values.config.postgresPassword }}
+        - name: POSTGRESQL_DATABASE
+          value: {{ .Values.config.postgresDatabase }}
+        - name: CHART_VERSION
+          value: {{ .Chart.AppVersion }}
         ports:
           - containerPort: {{ .Values.service.port }}
         securityContext:
-          #readOnlyRootFilesystem: true
           runAsNonRoot: true
         resources:
           limits:
@@ -43,14 +46,7 @@ spec:
             cpu: {{ .Values.resources.requests.cpu }}
             memory: {{ .Values.resources.requests.memory }}
         readinessProbe:
-          httpGet:
-            path: '{{ first .Values.locations }}/healthcheck'
+          tcpSocket:
             port: {{ .Values.service.port }}
-            scheme: HTTP
-      volumes:
-      - name: haproxy-config
-        configMap:
-          name: haproxy-config
-          items:
-          - key: "haproxy_cfg"
-            path: "haproxy.cfg"
+          initialDelaySeconds: 15
+          periodSeconds: 20

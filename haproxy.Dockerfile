@@ -1,4 +1,4 @@
-FROM	alpine:3.13
+FROM	alpine:3.15.0
 RUN	apk update; \
 	apk add --no-cache bash
 SHELL	["/bin/bash", "-xeo", "pipefail", "-c"]
