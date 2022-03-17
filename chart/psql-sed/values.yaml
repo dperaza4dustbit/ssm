@@ -1,0 +1,7 @@
+postgresql:
+  sed:
+    hostname: psql
+    port: 5432
+    username: dperaza
+    password: quebolasere
+    databasename: helmrocks

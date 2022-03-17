@@ -2,19 +2,28 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"crypto/rsa"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
+	"path/filepath"
+	"time"
+
+	"database/sql"
 
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
+	_ "github.com/lib/pq"
 )
+
+// "github.com/lib/pq"
 
 // StringService provides operations on strings.
 type StringService interface {
@@ -132,13 +141,123 @@ func makeHealthcheckEndpoint(svc StringService) endpoint.Endpoint {
 	}
 }
 
-// Transports expose the service to the network. In this first example we utilize JSON over HTTP.
-func main() {
-	svc := stringService{}
+func getPSQLParams(baseDir string) map[string]string {
+	var paramMap = make(map[string]string)
+	dirs, err := os.ReadDir(baseDir)
+	log.Println(baseDir)
+
+	if err != nil {
+        log.Fatal(err)
+    }
+
+	for _, dir := range dirs {
+	    dirPath := filepath.Join(baseDir, dir.Name())
+		log.Println(dirPath)
+        
+		typePath := filepath.Join(dirPath, "type")
+		dat_type, _ := os.ReadFile(typePath)
+		btype := string(dat_type)
+		providerPath := filepath.Join(dirPath, "provider")
+		dat_provider, _ := os.ReadFile(providerPath)
+		provider := string(dat_provider)
+		
+		if btype == "postgresql" && provider == "redhat" {
+		    log.Println("Postgresql binding data found")
+		    hostPath := filepath.Join(dirPath, "host")
+			dat_host, _ := os.ReadFile(hostPath)
+			paramMap["host"] = string(dat_host)
+
+			userPath := filepath.Join(dirPath, "username")
+			dat_user, _ := os.ReadFile(userPath)
+			paramMap["username"] = string(dat_user)
+
+			passPath := filepath.Join(dirPath, "password")
+			dat_pass, _ := os.ReadFile(passPath)
+			paramMap["password"] = string(dat_pass)
+
+			portPath := filepath.Join(dirPath, "port")
+			dat_port, _ := os.ReadFile(portPath)
+			paramMap["port"] = string(dat_port)
+
+			databasePath := filepath.Join(dirPath, "database")
+			dat_database, _ := os.ReadFile(databasePath)
+			paramMap["database"] = string(dat_database)
+
+			return paramMap
+		}
+    }
+	return paramMap
+}
+
+func getMasterKey(baseKey string) string {
+    time.Sleep(5 * time.Second)
+	connParams := getPSQLParams("/bindings")
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable port=%s", connParams["host"],
+		connParams["username"], connParams["password"], connParams["database"], connParams["port"])
+	//log.Println(connStr)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Println("Error connecting to database")
+		log.Fatal(err)
+	}
+
+	log.Println("Sucessful connection to database!")
+
+	_, create_err := db.Query("CREATE TABLE IF NOT EXISTS keys (name VARCHAR(10), value TEXT)")
+
+	if create_err != nil {
+		log.Println("Error creating keys table")
+		log.Fatal(create_err)
+	}
+
+
+	rows := db.QueryRow("SELECT value FROM keys WHERE name = 'MASTERKEY'")
+	var value string
+
+	scan_err := rows.Scan(&value)
+
+	if scan_err == nil {
+		return value
+	} else {
+		log.Println("Master Key not found, creating")
+	    sqlStatement := `
+        INSERT INTO keys (name, value)
+        VALUES ($1, $2)`
+
+		_, insert_err := db.Exec(sqlStatement, "MASTERKEY", baseKey)
+		if insert_err != nil {
+			log.Println("Error inserting master key")
+			log.Fatal(insert_err.Error())
+		}
+	}
+	
+	return baseKey
+}
+
+func getPrivateKey() *rsa.PrivateKey {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	
 	if err != nil {
 	    log.Fatalf("Error generating encryption key: %s\n", err)
 	}
+
+	keyBytes := x509.MarshalPKCS1PrivateKey(key)
+	keyString := base64.StdEncoding.EncodeToString(keyBytes)
+	keyString = getMasterKey(keyString)
+	keyBytes, _ = base64.StdEncoding.DecodeString(keyString)
+	key, err = x509.ParsePKCS1PrivateKey(keyBytes)
+
+	if err != nil {
+	    log.Fatalf("Error Parsing encryption key: %s\n", err)
+	}
+
+	return key
+}
+
+// Transports expose the service to the network. In this first example we utilize JSON over HTTP.
+func main() {
+	svc := stringService{}
+	key := getPrivateKey()
 
 	wrapHandler := httptransport.NewServer(
 		makeWrapEndpoint(svc, key),
