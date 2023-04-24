@@ -11,8 +11,9 @@ location: usa
 serviceAccount: sa-with-anyuid
 
 sbo:
-  name: psql-service-ssm-app
-  sed: davpsedpsql
+  servicelabels:
+    - name: mydomain/service-type
+      value: myservice
 
 config:
   cipherOutputFormat: base64

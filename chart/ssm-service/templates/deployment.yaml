@@ -2,8 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.k8Name }}
-  annotations:
-      app.kubernetes.io/part-of: ssm
+  labels:
+{{- range $label := .Values.sbo.servicelabels }}
+    {{ $label.name }}: {{ $label.value }}
+{{- end }}   
 spec:
   selector:
     matchLabels: 
